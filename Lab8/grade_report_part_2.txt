@@ -1,0 +1,216 @@
+Grades for version committed on time
+	flood fill: 30.0 / 30
+			*Passed test: basic
+			*Passed test: basic (evil)
+			*Passed test: base_case
+			*Passed test: base_case (evil)
+			*Passed test: checkers
+			*Passed test: checkers (evil)
+			*Passed test: quadrants
+			*Passed test: quadrants (evil)
+			*Passed test: empty
+			*Passed test: empty (evil)
+			*Passed test: maze
+			*Passed test: maze (evil)
+		
+	count disjoint regions step: 0.0 / 30
+			*Failed test: basic
+				*Your output: -889262067 
+		Canvas struct:
+		  height = 5 
+		  width = 5 
+		  pattern = # 
+		  canvas = 
+		  !!!!!
+		  !!!!!
+		  !!!!!
+		  !!!!!
+		  !!!!!
+		
+			*Failed test: basic (evil)
+				*Your output: -889262067 
+		Canvas struct:
+		  height = 5 
+		  width = 5 
+		  pattern = # 
+		  canvas = 
+		  !!!!!
+		  !!!!!
+		  !!!!!
+		  !!!!!
+		  !!!!!
+		
+			*Failed test: base_case
+				*Your output: -889262067 
+		Canvas struct:
+		  height = 5 
+		  width = 5 
+		  pattern = # 
+		  canvas = 
+		  $$$$$
+		  $$$$$
+		  $$#$$
+		  $$$$$
+		  $$$$$
+		
+			*Failed test: base_case (evil)
+				*Your output: -889262067 
+		Canvas struct:
+		  height = 5 
+		  width = 5 
+		  pattern = # 
+		  canvas = 
+		  $$$$$
+		  $$$$$
+		  $$#$$
+		  $$$$$
+		  $$$$$
+		
+			*Failed test: checkers
+				*Your output: -889262067 
+		Canvas struct:
+		  height = 3 
+		  width = 3 
+		  pattern = # 
+		  canvas = 
+		  /#/
+		  #/#
+		  /#/
+		
+			*Failed test: checkers (evil)
+				*Your output: -889262067 
+		Canvas struct:
+		  height = 3 
+		  width = 3 
+		  pattern = # 
+		  canvas = 
+		  /#/
+		  #/#
+		  /#/
+		
+			*Failed test: quadrants
+				*Your output: -889262067 
+		Canvas struct:
+		  height = 9 
+		  width = 9 
+		  pattern = # 
+		  canvas = 
+		  %%%%#%%%%
+		  %%%%#%%%%
+		  %%%%#%%%%
+		  %%%%#%%%%
+		  #########
+		  %%%%#%%%%
+		  %%%%#%%%%
+		  %%%%#%%%%
+		  %%%%#%%%%
+		
+			*Failed test: quadrants (evil)
+				*Your output: -889262067 
+		Canvas struct:
+		  height = 9 
+		  width = 9 
+		  pattern = # 
+		  canvas = 
+		  %%%%#%%%%
+		  %%%%#%%%%
+		  %%%%#%%%%
+		  %%%%#%%%%
+		  #########
+		  %%%%#%%%%
+		  %%%%#%%%%
+		  %%%%#%%%%
+		  %%%%#%%%%
+		
+			*Failed test: empty
+				*Your output: -889262067 
+		Canvas struct:
+		  height = 0 
+		  width = 0 
+		  pattern = # 
+		  canvas = 
+		
+			*Failed test: empty (evil)
+				*Your output: -889262067 
+		Canvas struct:
+		  height = 0 
+		  width = 0 
+		  pattern = # 
+		  canvas = 
+		
+			*Failed test: maze
+				*Your output: -889262067 
+		Canvas struct:
+		  height = 9 
+		  width = 9 
+		  pattern = # 
+		  canvas = 
+		  &&#&&&&&#
+		  &&####&&#
+		  &&#&&&&&#
+		  ##&######
+		  &###&&&&&
+		  &&&#&&&&&
+		  &&&######
+		  &&&#&&&&&
+		  &&&&&&&&&
+		
+			*Failed test: maze (evil)
+				*Your output: -889262067 
+		Canvas struct:
+		  height = 9 
+		  width = 9 
+		  pattern = # 
+		  canvas = 
+		  &&#&&&&&#
+		  &&####&&#
+		  &&#&&&&&#
+		  ##&######
+		  &###&&&&&
+		  &&&#&&&&&
+		  &&&######
+		  &&&#&&&&&
+		  &&&&&&&&&
+		
+		
+	count disjoint regions: 6.0 / 20
+			*Passed test: basic
+			*Passed test: basic (evil)
+			*Failed test: base_case
+				*Error running test: 
+					Exception occurred at PC=0x004007c0
+					  Unaligned address in inst/data fetch: 0xcafef00d
+			*Failed test: base_case (evil)
+				*Error running test: 
+					Exception occurred at PC=0x004007c0
+					  Unaligned address in inst/data fetch: 0xcafef00d
+			*Failed test: checkers
+				*Error running test: 
+					Exception occurred at PC=0x004007c0
+					  Unaligned address in inst/data fetch: 0xcafef00d
+			*Failed test: checkers (evil)
+				*Error running test: 
+					Exception occurred at PC=0x004007c0
+					  Unaligned address in inst/data fetch: 0xcafef00d
+			*Failed test: quadrants
+				*Error running test: 
+					Exception occurred at PC=0x004007c0
+					  Unaligned address in inst/data fetch: 0xcafef00d
+			*Failed test: quadrants (evil)
+				*Error running test: 
+					Exception occurred at PC=0x004007c0
+					  Unaligned address in inst/data fetch: 0xcafef00d
+			*Passed test: empty
+			*Passed test: empty (evil)
+			*Failed test: maze
+				*Error running test: 
+					Exception occurred at PC=0x004007c0
+					  Unaligned address in inst/data fetch: 0xcafef00d
+			*Failed test: maze (evil)
+				*Error running test: 
+					Exception occurred at PC=0x004007c0
+					  Unaligned address in inst/data fetch: 0xcafef00d
+		
+Total: 36.0 / 80
+
+Final Score: 36.0 / 80

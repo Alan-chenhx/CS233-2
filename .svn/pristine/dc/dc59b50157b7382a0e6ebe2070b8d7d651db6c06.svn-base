@@ -1,0 +1,26 @@
+Grades for version committed on time
+	sc2_block: 50.0 / 50
+			*Passed test: a = 0 b = 0 cin = 0
+			*Passed test: a = 0 b = 0 cin = 1
+			*Passed test: a = 0 b = 1 cin = 0
+			*Passed test: a = 0 b = 1 cin = 1
+			*Passed test: a = 1 b = 0 cin = 0
+			*Passed test: a = 1 b = 0 cin = 1
+			*Passed test: a = 1 b = 1 cin = 0
+			*Passed test: a = 1 b = 1 cin = 1
+		
+	blackbox: 37.5 / 50
+			*Passed test: 0 0 0
+			*Failed test: 0 0 1
+				*Your output: 0
+			*Passed test: 0 1 0
+			*Failed test: 0 1 1
+				*Your output: 1
+			*Passed test: 1 0 0
+			*Passed test: 1 0 1
+			*Passed test: 1 1 0
+			*Passed test: 1 1 1
+		
+Total: 87.5 / 100
+
+Final Score: 87.5 / 100

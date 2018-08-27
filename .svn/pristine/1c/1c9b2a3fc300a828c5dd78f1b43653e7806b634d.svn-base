@@ -1,0 +1,51 @@
+.text
+
+## void add_line(unsigned int start_pos, unsigned int end_pos,
+##               unsigned int* canvas, unsigned int* origins) {
+##     int step_size = 1;
+##     // Check if the line is vertical.
+##     if (!((start_pos ^ end_pos) & 31)) {
+##         step_size = 32;
+##     }
+##     if (start_pos > end_pos) {
+##         step_size *= -1;
+##     }
+##     // Update the origin map.
+##     add_dot(end_pos, canvas);
+##     for (int i = start_pos; i != end_pos; i += step_size) {
+##         add_dot(i, canvas);
+##         origins[get_origin(i + step_size, origins)] = get_origin(i, origins);
+##     }
+## }
+
+.globl add_line
+add_line:
+	# Your code goes here :)
+	sub	$sp, $sp, __ 	#stk
+	sw 	$ra, 0($sp)	#ra
+	sw 	$a0, 4($sp) 	#start_pos
+	sw 	$a1, 8($sp) 	#end_pos
+	sw 	$a2, 12($sp) 	#canvas
+	sw 	$a3, 16($sp) 	#origin
+	li 	$t0, 1		#set t0= step_size
+
+	lw 	$t1, 4($sp) 	#t1 = start_pos
+	lw 	$t2, 8($sp) 	#t2 = end_pos
+	xor 	$t3, $t1, $t2 	#t1 = start_pos^end_pos
+	and 	$t3, $t3, 31 	#t1 = t1 & 31
+	bnez 	$t3, first_condition 	#now $t3 can be freed
+	ble 	$t1, $t2, second_condition
+
+	move 	$a0, $t2 	# $a0 = end_pos
+	lw 	$a1, 12($sp) 	# $a1 = canvas
+	jal 	add_dot 	
+
+	move 	$t3, $t1 	#t3 = start_pos
+	
+
+	jr	$ra
+
+first_condition:
+	li 	$t0, 32		#set step_size = 31
+second_condition:
+	neg 	$t0, $t0 	#step_size *= -1 

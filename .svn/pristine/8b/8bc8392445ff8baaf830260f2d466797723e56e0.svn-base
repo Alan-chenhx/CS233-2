@@ -1,0 +1,40 @@
+`define STATUS_REGISTER 5'd12
+`define CAUSE_REGISTER  5'd13
+`define EPC_REGISTER    5'd14
+
+module cp0(rd_data, EPC, TakenInterrupt,
+           wr_data, regnum, next_pc,
+           MTC0, ERET, TimerInterrupt, clock, reset);
+    output [31:0] rd_data;
+    output [29:0] EPC;
+    output        TakenInterrupt;
+    input  [31:0] wr_data;
+    input   [4:0] regnum;
+    input  [29:0] next_pc;
+    input         MTC0, ERET, TimerInterrupt, clock, reset;
+    /////////////////
+    wire [31:0] user_status,decoder_out,EPC_out;
+    wire [29:0] EPC_in;
+    wire EX_level;
+    wire [31:0] cause_register,status_register;
+
+    // your Verilog for coprocessor 0 goes here
+    register status(user_status,wr_data,clock,decoder_out[12],reset);
+    register #(30) EPC_REG(EPC,EPC_in,clock,TakenInterrupt||decoder_out[14],reset);
+    decoder32 decoder(decoder_out,regnum,MTC0);
+    dffe exceptionlevel(EX_level,1'd1,clock,TakenInterrupt,reset||ERET);
+    mux2v #(30) mux_EPC(EPC_in,wr_data[31:2],next_pc,TakenInterrupt);
+    mux32v #(32) mux_rd(rd_data,0,0,0,0,0,0,0,0,0,0,0,0,status_register,cause_register,EPC_out,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,regnum);
+    assign cause_register[15] = TimerInterrupt;
+    assign EPC_out = {EPC,{2'b0}};
+    assign cause_register[31:16] = {16{1'b0}};
+    assign cause_register[14:0] = {15{1'b0}};
+    assign status_register[31:16] ={16{1'b0}};
+    assign status_register[7:2] ={6{1'b0}};
+    assign status_register[15:8] =user_status[15:8];
+    assign status_register[1] = EX_level;
+    assign status_register[0] = user_status[0];
+
+    assign TakenInterrupt = (cause_register[15]&&status_register[15])&&(~status_register[1]&&status_register[0]);
+ 
+endmodule

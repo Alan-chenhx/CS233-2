@@ -1,0 +1,42 @@
+Grades for version committed on time
+	keypad: 20.0 / 20
+			*Passed test: abcdefg = 48
+			*Passed test: abcdefg = 28
+			*Passed test: abcdefg = 18
+			*Passed test: abcdefg = 44
+			*Passed test: abcdefg = 24
+			*Passed test: abcdefg = 14
+			*Passed test: abcdefg = 42
+			*Passed test: abcdefg = 22
+			*Passed test: abcdefg = 12
+			*Passed test: abcdefg = 21
+			*Passed test: abcdefg = 00
+		
+	extract_message: 40.0 / 40
+			*Passed test: simple
+				*Encoded message: [50, 33, 29, 3, 84, 127, 127, 0] (2!T).
+				*Expected decode: [110, 105, 116, 100, 117, 99, 112, 0] (nitducp)
+				*Actual decode: [110, 105, 116, 100, 117, 99, 112, 0] (nitducp)
+			*Passed test: 3 words
+				*Encoded message: [49, 10, 55, 2, 157, 255, 191, 0, 115, 52, 100, 102, 128, 255, 247, 0, 46, 4, 49, 3, 16, 63, 63, 0] (1
+		7ÿ¿s4dfÿ÷.1??).
+				*Expected decode: [117, 110, 116, 114, 117, 101, 32, 112, 97, 105, 110, 32, 99, 111, 109, 112, 108, 105, 99, 97, 116, 101, 0] (untrue pain complicate)
+				*Actual decode: [117, 110, 116, 114, 117, 101, 32, 112, 97, 105, 110, 32, 99, 111, 109, 112, 108, 105, 99, 97, 116, 101, 0, 0] (untrue pain complicate)
+			*Passed test: 5 words
+				*Encoded message: [171, 87, 240, 72, 21, 255, 255, 0, 236, 85, 196, 0, 17, 255, 253, 0, 154, 108, 116, 134, 24, 255, 254, 0, 71, 9, 60, 106, 80, 255, 127, 0, 105, 18, 174, 32, 148, 255, 255, 0, 216, 176, 76, 1, 160, 255, 253, 0, 19, 21, 30, 20, 0, 31, 31, 0] («WðHÿÿìUÄÿýltÿþG	<jPÿi® ÿÿØ°L ÿý).
+				*Expected decode: [115, 99, 114, 105, 118, 101, 110, 101, 114, 32, 103, 97, 114, 97, 103, 101, 32, 105, 110, 115, 117, 102, 102, 105, 99, 105, 101, 110, 116, 108, 121, 32, 97, 102, 116, 101, 114, 109, 97, 116, 104, 32, 100, 101, 99, 114, 101, 115, 99, 101, 110, 100, 111, 0] (scrivener garage insufficiently aftermath decrescendo)
+				*Actual decode: [115, 99, 114, 105, 118, 101, 110, 101, 114, 32, 103, 97, 114, 97, 103, 101, 32, 105, 110, 115, 117, 102, 102, 105, 99, 105, 101, 110, 116, 108, 121, 32, 97, 102, 116, 101, 114, 109, 97, 116, 104, 32, 100, 101, 99, 114, 101, 115, 99, 101, 110, 100, 111, 0, 0, 0] (scrivener garage insufficiently aftermath decrescendo)
+			*Passed test: Thousands of words
+				*Output hidden (too long)
+		
+	count_ones: 40.0 / 40
+			*Passed test: 2
+			*Passed test: 55
+			*Passed test: 42
+			*Passed test: 0xffffffff
+			*Passed test: 0x12345678
+			*Passed test: 0x55555555
+		
+Total: 100.0 / 100
+
+Final Score: 100.0 / 100

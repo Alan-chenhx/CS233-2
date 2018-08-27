@@ -1,0 +1,7 @@
+in this project, our strategy is very simple. at the beginning part of game, we solve one puzzle and freeze our enemy.
+then, we solve puzzle and get energy if our energy level is smaller than 600. Our strategy for collecting asteroids is similar with
+the strategy in Lab 8: we collect the asteroid in the asteroid map, go in Y-direction first and then in X- direction.
+During the process, if the energy goes below 600, we request and solve puzzle to get energy. during the process of waiting for puzzle
+and solving it, our bot goes right to avoid to be dragged into the supernova. we go to a location which is on the station's path, and then
+keep dropping the cargo until the cargo becomes zero, meaning that dropping succeeds. The cargo level is 60,that is, once the score we collect is over 60, we go dropping.
+Then our bot repeat the actions above until the end of game.    

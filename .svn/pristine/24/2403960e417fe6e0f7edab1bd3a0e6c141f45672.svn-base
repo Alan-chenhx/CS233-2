@@ -1,0 +1,784 @@
+# debug constants
+PRINT_INT_ADDR              = 0xffff0080
+PRINT_FLOAT_ADDR            = 0xffff0084
+PRINT_HEX_ADDR              = 0xffff0088
+
+# spimbot memory-mapped I/O
+VELOCITY                    = 0xffff0010
+ANGLE                       = 0xffff0014
+ANGLE_CONTROL               = 0xffff0018
+BOT_X                       = 0xffff0020
+BOT_Y                       = 0xffff0024
+OTHER_BOT_X                 = 0xffff00a0
+OTHER_BOT_Y                 = 0xffff00a4
+TIMER                       = 0xffff001c
+SCORES_REQUEST              = 0xffff1018
+
+ASTEROID_MAP                = 0xffff0050
+COLLECT_ASTEROID            = 0xffff00c8
+
+STATION_LOC                 = 0xffff0054
+DROPOFF_ASTEROID            = 0xffff005c
+
+GET_ENERGY                  = 0xffff00c0
+GET_CARGO                   = 0xffff00c4
+
+REQUEST_PUZZLE              = 0xffff00d0
+SUBMIT_SOLUTION             = 0xffff00d4
+
+THROW_PUZZLE                = 0xffff00e0
+UNFREEZE_BOT                = 0xffff00e8
+CHECK_OTHER_FROZEN          = 0xffff101c
+
+# interrupt constants
+BONK_INT_MASK               = 0x1000
+BONK_ACK                    = 0xffff0060
+
+TIMER_INT_MASK              = 0x8000
+TIMER_ACK                   = 0xffff006c
+
+REQUEST_PUZZLE_INT_MASK     = 0x800
+REQUEST_PUZZLE_ACK          = 0xffff00d8
+
+STATION_ENTER_INT_MASK      = 0x400
+STATION_ENTER_ACK           = 0xffff0058
+
+STATION_EXIT_INT_MASK       = 0x2000
+STATION_EXIT_ACK            = 0xffff0064
+
+BOT_FREEZE_INT_MASK         = 0x4000
+BOT_FREEZE_ACK              = 0xffff00e4
+
+
+# $t9 is bit flags
+
+has_puzzle = 0x00000001
+request_puzzle = 0x00000002
+Station_Enter_flag = 0x00000004
+bot_frozen_flag = 0x00000008
+.data
+# put your data things here
+# has_puzzle: .word 0
+# request_puzzle: .word 0\
+solution:       .word   2       counts
+counts:         .space  8
+FLAG: .word 1
+.align 8
+puzzle_data: .space 5000
+integer_solution: .space 2000
+astroid_solution: .space 2000
+thrown_puzzle: .space 2000
+
+
+
+.text
+main:
+        # put your code here :)
+        li      $t4, TIMER_INT_MASK
+        or      $t4, $t4, BONK_INT_MASK
+        or      $t4, $t4, REQUEST_PUZZLE_INT_MASK
+        or      $t4, $t4, STATION_EXIT_INT_MASK
+        or      $t4, $t4, STATION_ENTER_INT_MASK
+        or      $t4, $t4, BOT_FREEZE_INT_MASK
+        or      $t4, 1
+        mtc0    $t4, $12
+restart:
+        la      $s1, astroid_solution
+        sw      $s1, ASTEROID_MAP
+
+
+        jal     freeze_request_solve_puzzle # froze other bot!!!!!
+        j       first
+
+
+back:
+        add     $s1, $s1, 8         # $t0 = +1
+        #<< unfreeze bot <<<<
+        #and     $t5, $t9, bot_frozen_flag
+        lw      $a1, FLAG
+        beq     $a1, 0, first
+        la      $a1, thrown_puzzle
+        add     $a0, $a1, 16
+        la      $a2, solution
+        jal     count_disjoint_regions
+        la      $a2, counts
+        sw      $a2, UNFREEZE_BOT
+        sw      $0, FLAG
+
+first:
+# la      $s1, astroid_solution
+# sw      $s1, ASTEROID_MAP
+
+lw $t8, 8($s1)
+blt $t8, 18, back
+        # note that we infinite loop to avoid stopping the simulation early
+        # and     $t9, $t9, bot_frozen_flag # unfrozen
+        # beq     $t9, 0, skip
+        # jal     submit_solution
+        # sw      $a2, UNFREEZE_BOT
+skip:
+        lw      $s0, GET_ENERGY
+        li      $t9, 0
+        bgt     $s0, 600, find_astroid #@TODO: change this
+        jal     request_solve_puzzle
+
+find_astroid:
+        # and     $t8, $t9, bot_frozen_flag
+        # blt     $t8, 1, first
+        # jal     count_disjoint_regions
+        # la      $a2, counts
+        # sw      $a2, UNFREEZE_BOT
+        # or      $t9, $t9, bot_frozen_flag
+        #@TODO keep moving find astroid.
+        lw  $t1, 4($s1)         # $t1 = get asteroids[0]
+        srl $t2, $t1, 16        # $t2 = x
+        and $t3, $t1, 0x0000ffff        # $t3 = y
+        beq $t3, 0x7ffe, restart
+        blt $t2, 35, back
+
+updatey:
+        lw      $t8, 8($s1)
+        blt     $t8, 18, back
+
+        #and     $t5, FLAG, bot_frozen_flag
+        lw      $a1, FLAG
+        beq     $a1, 0, continue_updatey
+        la      $a1, thrown_puzzle
+        add     $a0, $a1, 16
+        la      $a2, solution
+        jal     count_disjoint_regions
+        la      $a2, counts
+        sw      $a2, UNFREEZE_BOT
+        sw      $0, FLAG
+        #得到bot位置
+continue_updatey:
+        lw      $t5, BOT_Y         # $t5 = boty
+
+
+findy:
+lw  $t1, 4($s1)         # $t1 = get asteroids[0]
+and $t3, $t1, 0x0000ffff        # $t3 = y
+        sub $t7, $t3, $t5
+        beq $t7, 0, updatex
+        blt $t7, 0, goup
+
+godown:
+        lw  $t4, BOT_X         # $t4 = botx
+        bge $t4, 200, special1
+        li  $a0, 30
+        sw  $a0, ANGLE                  # ANGLE = 90
+        li  $a0, 1
+        sw  $a0, ANGLE_CONTROL          # ANGLE_CONTROL = 1
+        li  $a0, 10
+        sw  $a0, VELOCITY               # VELOCITY = 5
+        j   updatey
+
+special1:
+        li  $a0, 90
+        sw  $a0, ANGLE                 # ANGLE = 270
+        li  $a0, 1
+        sw  $a0, ANGLE_CONTROL         # ANGLE_CONTROL = 1
+        li  $a0, 10
+        sw  $a0, VELOCITY              # VELOCITY = 5
+        j   updatey
+
+goup:
+        lw  $t4, BOT_X         # $t4 = botx
+        bge $t4, 200, special2
+        li  $a0, 330
+        sw  $a0, ANGLE                 # ANGLE = 270
+        li  $a0, 1
+        sw  $a0, ANGLE_CONTROL         # ANGLE_CONTROL = 1
+        li  $a0, 10
+        sw  $a0, VELOCITY              # VELOCITY = 5
+        j   updatey
+
+special2:
+        li  $a0, 270
+        sw  $a0, ANGLE                 # ANGLE = 270
+        li  $a0, 1
+        sw  $a0, ANGLE_CONTROL         # ANGLE_CONTROL = 1
+        li  $a0, 10
+        sw  $a0, VELOCITY               # VELOCITY = 5
+        j   updatey
+
+updatex:
+        lw $t8, 8($s1)
+        blt $t8, 18, back
+
+        #and     $t4, $t9, bot_frozen_flag
+        lw      $a1, FLAG
+        beq     $a1, 0, continue_updatex
+        la      $a1, thrown_puzzle
+        add     $a0, $a1, 16
+        la      $a2, solution
+        jal     count_disjoint_regions
+        la      $a2, counts
+        sw      $a2, UNFREEZE_BOT
+        sw      $0, FLAG
+
+continue_updatex:
+        lw      $t4, BOT_X         # $t4 = botx
+
+        #计算
+findx:
+lw  $t1, 4($s1)         # $t1 = get asteroids[0]
+srl $t2, $t1, 16        # $t2 = x
+        sub $t6, $t2, $t4
+        beq $t6, 0, next
+        blt $t6, 0, toleft
+
+toright:
+        li  $a0, 0
+        sw  $a0, ANGLE                  # ANGLE = 0
+        li  $a0, 1
+        sw  $a0, ANGLE_CONTROL         # ANGLE_CONTROL = 1
+        li  $a0, 10
+        sw  $a0, VELOCITY               # VELOCITY = 5
+        j   updatex
+
+toleft:
+        li  $a0, 180
+        sw  $a0, ANGLE                  # ANGLE = 180
+        li  $a0, 1
+        sw  $a0, ANGLE_CONTROL         # ANGLE_CONTROL = 1
+        li  $a0, 10
+        sw  $a0, VELOCITY               # VELOCITY = 2
+        j   updatex
+
+next:
+
+        li  $a0, 1
+        sw  $a0, 0xffff00c8($zero)         # do COLLECT
+
+
+        # note that we infinite loop to avoid stopping the simulation early
+
+check_65:
+        lw  $a0, 0xffff00c4($zero)         # get cargo
+        blt $a0, 60, back
+
+        lw      $s0, GET_ENERGY
+        li      $t9, 0
+        bgt     $s0, 600, dropupdatey #@TODO: change this
+        jal     request_solve_puzzle
+
+dropupdatey:
+        #得到bot位置
+        lw  $t5, BOT_Y         # $t5 = boty
+        li  $t3, 150
+
+dropfindy:
+        sub $t7, $t3, $t5
+        beq $t7, 0, dropupdatex
+        blt $t7, 0, dropgoup
+
+dropgodown:
+        lw  $t4, 0xffff0020($zero)         # $t4 = botx
+        bge $t4, 200, dropspecial1
+        li  $a0, 30
+        sw  $a0, 0xffff0014($zero)         # ANGLE = 90
+        li  $a0, 1
+        sw  $a0, 0xffff0018($zero)         # ANGLE_CONTROL = 1
+        li  $a0, 10
+        sw  $a0, 0xffff0010($zero)         # VELOCITY = 5
+        j   dropupdatey
+
+dropspecial1:
+        li  $a0, 90
+        sw  $a0, 0xffff0014($zero)         # ANGLE = 270
+        li  $a0, 1
+        sw  $a0, 0xffff0018($zero)         # ANGLE_CONTROL = 1
+        li  $a0, 10
+        sw  $a0, 0xffff0010($zero)         # VELOCITY = 5
+        j   dropupdatey
+
+dropgoup:
+        lw  $t4, 0xffff0020($zero)         # $t4 = botx
+        bge $t4, 200, dropspecial2
+        li  $a0, 330
+        sw  $a0, 0xffff0014($zero)         # ANGLE = 270
+        li  $a0, 1
+        sw  $a0, 0xffff0018($zero)         # ANGLE_CONTROL = 1
+        li  $a0, 10
+        sw  $a0, 0xffff0010($zero)         # VELOCITY = 5
+        j   dropupdatey
+
+dropspecial2:
+        li  $a0, 270
+        sw  $a0, 0xffff0014($zero)         # ANGLE = 270
+        li  $a0, 1
+        sw  $a0, 0xffff0018($zero)         # ANGLE_CONTROL = 1
+        li  $a0, 10
+        sw  $a0, 0xffff0010($zero)         # VELOCITY = 5
+        j   dropupdatey
+dropupdatex:
+        lw      $s0, GET_ENERGY
+        li      $t9, 0
+        bgt     $s0, 600, dropfindx #@TODO: change this
+
+        jal     request_solve_puzzle                     # $t9 = 0;
+
+dropfindx:
+        #得到bot位置
+        lw  $t4, BOT_X         # $t4 = botx
+        li  $t2, 250
+
+        #计算
+        sub $t6, $t2, $t4
+        beq $t6, 0, dropnext
+        blt $t6, 0, droptoleft
+
+droptoright:
+        li  $a0, 0
+        sw  $a0, 0xffff0014($zero)         # ANGLE = 0
+        li  $a0, 1
+        sw  $a0, 0xffff0018($zero)         # ANGLE_CONTROL = 1
+        li  $a0, 10
+        sw  $a0, 0xffff0010($zero)         # VELOCITY = 5
+        j   dropupdatex
+
+droptoleft:
+        li  $a0, 180
+        sw  $a0, 0xffff0014($zero)         # ANGLE = 180
+        li  $a0, 1
+        sw  $a0, 0xffff0018($zero)         # ANGLE_CONTROL = 1
+        li  $a0, 2
+        sw  $a0, 0xffff0010($zero)         # VELOCITY = 2
+        j   dropupdatex
+
+dropnext:
+        lw  $a0, GET_CARGO
+        sw  $a0, STATION_ENTER_ACK
+        sw  $a0, 0xffff005c($zero)         # do DROP
+        lw  $a0, GET_CARGO
+        beq $a0, 0, back
+        j   dropupdatey
+
+
+#------------------------------#
+count_disjoint_regions: #(const Lines* lines, Canvas* canvas, Solution* solution)
+        sub     $sp, $sp, 36
+        sw      $ra, 0($sp)
+        sw      $s0, 4($sp)
+        sw      $s1, 8($sp)
+        sw      $s2, 12($sp)
+        sw      $s3, 16($sp)
+        sw      $s4, 20($sp)
+        sw      $s5, 24($sp)
+        sw      $s6, 28($sp)
+        sw      $s7, 32($sp)
+        move    $s0, $a0        # s0 = lines
+        move    $s1, $a1        # s1 = canvas
+        move    $s2, $a2        # s2 = solution
+
+        lw      $s4, 0($s0)     # s4 = lines->num_lines
+        li      $s5, 0          # s5 = i
+        lw      $s6, 4($s0)     # s6 = lines->coords[0]
+        lw      $s7, 8($s0)     # s7 = lines->coords[1]
+for_loop:
+        bgeu    $s5, $s4, end_for
+        mul     $t2, $s5, 4     # t2 = i*4
+        add     $t3, $s6, $t2   # t3 = &lines->coords[0][i]
+        lw      $a0, 0($t3)     # a0 = start_pos = lines->coords[0][i]
+        add     $t4, $s7, $t2   # t4 = &lines->coords[1][i]
+        lw      $a1, 0($t4)     # a1 = end_pos = lines->coords[1][i]
+        move    $a2, $s1
+        jal     draw_line
+
+        li      $t9, 2
+        div     $s5, $t9
+        mfhi    $t6             # t6 = i % 2
+        addi    $a0, $t6, 65    # a0 = 'A' + (i % 2)
+        move    $a1, $s1        # count_disjoint_regions_step('A' + (i % 2), canvas)
+        jal     count_disjoint_regions_step                # v0 = count
+        lw      $t6, 4($s2)     # t6 = solution->counts
+        mul     $t7, $s5, 4
+        add     $t7, $t7, $t6   # t7 = &solution->counts[i]
+        sw      $v0, 0($t7)     # solution->counts[i] = count
+        addi    $s5, $s5, 1     # i++
+        j       for_loop
+
+end_for:
+        lw      $ra, 0($sp)
+        lw      $s0, 4($sp)
+        lw      $s1, 8($sp)
+        lw      $s2, 12($sp)
+        lw      $s3, 16($sp)
+        lw      $s4, 20($sp)
+        lw      $s5, 24($sp)
+        lw      $s6, 28($sp)
+        lw      $s7, 32($sp)
+        add     $sp, $sp, 36
+        jr      $ra
+count_disjoint_regions_step: # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+        sub     $sp, $sp, 36
+        sw      $ra, 0($sp)
+        sw      $s0, 4($sp)
+        sw      $s1, 8($sp)
+        sw      $s2, 12($sp)
+        sw      $s3, 16($sp)
+        sw      $s4, 20($sp)
+        sw      $s5, 24($sp)
+        sw      $s6, 28($sp)
+        sw      $s7, 32($sp)
+
+        move    $s0, $a0
+        move    $s1, $a1
+
+        li      $s2, 0                  # $s2 = region_count
+        li      $s3, 0                  # $s3 = row
+        lw      $s4, 0($s1)             # $s4 = canvas->height
+        lw      $s6, 4($s1)             # $s6 = canvas->width
+        lw      $s7, 8($s1)             # canvas->pattern
+
+cdrs_outer_for_loop:
+        bge     $s3, $s4, cdrs_outer_end
+        li      $s5, 0                  # $s5 = col
+
+cdrs_inner_for_loop:
+        bge     $s5, $s6, cdrs_inner_end
+        lw      $t0, 12($s1)            # canvas->canvas
+        mul     $t5, $s3, 4             # row * 4
+        add     $t5, $t0, $t5           # &canvas->canvas[row]
+        lw      $t0, 0($t5)             # canvas->canvas[row]
+        add     $t0, $t0, $s5           # &canvas->canvas[row][col]
+        lbu     $t0, 0($t0)             # $t0 = canvas->canvas[row][col]
+        beq     $t0, $s7, cdrs_skip_if  # curr_char != canvas->pattern
+        beq     $t0, $s0, cdrs_skip_if  # curr_char != canvas->marker
+        add     $s2, $s2, 1             # region_count++
+        move    $a0, $s3
+        move    $a1, $s5
+        move    $a2, $s0
+        move    $a3, $s1
+        jal     flood_fill
+
+cdrs_skip_if:
+        add     $s5, $s5, 1             # col++
+        j       cdrs_inner_for_loop
+
+cdrs_inner_end:
+        add     $s3, $s3, 1             # row++
+        j       cdrs_outer_for_loop
+
+cdrs_outer_end:
+        move    $v0, $s2
+        lw      $ra, 0($sp)
+        lw      $s0, 4($sp)
+        lw      $s1, 8($sp)
+        lw      $s2, 12($sp)
+        lw      $s3, 16($sp)
+        lw      $s4, 20($sp)
+        lw      $s5, 24($sp)
+        lw      $s6, 28($sp)
+        lw      $s7, 32($sp)
+        add     $sp, $sp, 36
+        jr      $ra
+draw_line: # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+        lw      $t0, 4($a2)     # t0 = width = canvas->width
+        li      $t1, 1          # t1 = step_size = 1
+        sub     $t2, $a1, $a0   # t2 = end_pos - start_pos
+        blt     $t2, $t0, cont
+        move    $t1, $t0        # step_size = width;
+cont:
+        move    $t3, $a0        # t3 = pos = start_pos
+        add     $t4, $a1, $t1   # t4 = end_pos + step_size
+        lw      $t5, 12($a2)    # t5 = &canvas->canvas
+        lbu     $t6, 8($a2)     # t6 = canvas->pattern
+draw_line_for_loop:
+        beq     $t3, $t4, drawline_end_for
+        div     $t3, $t0        #
+        mfhi    $t7             # t7 = pos % width
+        mflo    $t8             # t8 = pos / width
+        mul     $t9, $t8, 4             # t9 = pos/width*4
+        add     $t9, $t9, $t5   # t9 = &canvas->canvas[pos / width]
+        lw      $t9, 0($t9)     # t9 = canvas->canvas[pos / width]
+        add     $t9, $t9, $t7
+        sb      $t6, 0($t9)     # canvas->canvas[pos / width][pos % width] = canvas->pattern
+        add     $t3, $t3, $t1   # pos += step_size
+        j       draw_line_for_loop
+drawline_end_for:
+        jr      $ra
+
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< puzzle
+
+request_solve_puzzle:
+        sub     $sp, $sp, 4
+        sw      $ra, 0($sp)
+        and     $s0, $t9, request_puzzle
+        beq     $s0, 0,  here          # has already requested puzzle but puzzle isn't ready
+has_requested:
+        and     $s0, $t9, has_puzzle
+        bne     $s0, 0, submit_solution
+        lw  $t4, BOT_X                 # $t4 = botx
+        bge $t4, 200, skippy
+        li  $a0, 0
+        sw  $a0, ANGLE                  # ANGLE = 0
+        li  $a0, 1
+        sw  $a0, ANGLE_CONTROL         # ANGLE_CONTROL = 1
+        li  $a0, 10
+        sw  $a0, VELOCITY               # VELOCITY = 5
+        j       has_requested
+
+skippy:
+        li  $a0, 0
+        sw  $a0, ANGLE                  # ANGLE = 0
+        li  $a0, 1
+        sw  $a0, ANGLE_CONTROL         # ANGLE_CONTROL = 1
+        li  $a0, 1
+        sw  $a0, VELOCITY               # VELOCITY = 5
+        j       has_requested
+
+
+here:
+        la      $s0, puzzle_data
+        sw      $s0, REQUEST_PUZZLE
+        or      $t9, $t9, request_puzzle
+        j       has_requested
+
+submit_solution: # <<<<<<<<<<<<<<<<<<<<
+        la      $s0, puzzle_data
+        move    $a1, $s0
+        add     $a0, $s0, 16
+        la      $a2, solution               # initialize solution as $0
+        jal     count_disjoint_regions
+        la      $a2, counts
+        sw      $a2, SUBMIT_SOLUTION        # now only consider get energy
+        li      $t9, 0                      # $t9 = 0;
+        lw      $ra, 0($sp)
+        add     $sp, $sp, 4
+        jr      $ra
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+freeze_request_solve_puzzle:
+        sub     $sp, $sp, 4
+        sw      $ra, 0($sp)
+        and     $s0, $t9, request_puzzle
+        beq     $s0, 0,  freeze_here          # has already requested puzzle but puzzle isn't ready
+freeze_has_requested:
+        and     $s0, $t9, has_puzzle
+        bne     $s0, 0, freeze_submit_solution
+        lw  $t4, BOT_X                 # $t4 = botx
+        bge $t4, 200, freeze_skippy
+        li  $a0, 0
+        sw  $a0, ANGLE                  # ANGLE = 0
+        li  $a0, 1
+        sw  $a0, ANGLE_CONTROL         # ANGLE_CONTROL = 1
+        li  $a0, 10
+        sw  $a0, VELOCITY               # VELOCITY = 5
+        j       freeze_has_requested
+
+freeze_skippy:
+        li  $a0, 0
+        sw  $a0, ANGLE                  # ANGLE = 0
+        li  $a0, 1
+        sw  $a0, ANGLE_CONTROL         # ANGLE_CONTROL = 1
+        li  $a0, 1
+        sw  $a0, VELOCITY               # VELOCITY = 5
+        j       freeze_has_requested
+
+
+freeze_here:
+        la      $s0, puzzle_data
+        sw      $s0, REQUEST_PUZZLE
+        or      $t9, $t9, request_puzzle
+        j       freeze_has_requested
+
+freeze_submit_solution: # <<<<<<<<<<<<<<<<<<<<
+        la      $s0, puzzle_data
+        move    $a1, $s0
+        add     $a0, $s0, 16
+        la      $a2, solution               # initialize solution as $0
+        jal     count_disjoint_regions
+        la      $a2, counts
+        sw      $a2, THROW_PUZZLE        # now only consider get energy
+        sw      $a2, SUBMIT_SOLUTION
+        li      $t9, 0                      # $t9 = 0;
+        lw      $ra, 0($sp)
+        add     $sp, $sp, 4
+        jr      $ra
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+# submit_thrown_puzzle:
+#         sub     $sp, $sp, 4
+#         sw      $ra, 0($sp)#@TODO
+#         la      $s0, thrown_puzzle
+#         move    $a1, $s0
+#         add     $a0, $s0, 16
+#         la      $a2, solution               # initialize solution as $0
+#         jal     count_disjoint_regions
+#         la      $a2, counts
+#         sw      $a2, SUBMIT_SOLUTION        # now only consider get energy
+#         li      $t9, 0                      # $t9 = 0;
+#         lw      $ra, 0($sp)
+#         add     $sp, $sp, 4
+#         jr      $ra
+#<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+flood_fill: #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<,,,<<<
+        sub     $sp, $sp, 20
+        sw      $ra, 0($sp)
+        sw      $s0, 4($sp)
+        sw      $s1, 8($sp)
+        sw      $s2, 12($sp)
+        sw      $s3, 16($sp)
+        move    $s0, $a0                # $s0 = row
+        move    $s1, $a1                # $s1 = col
+        move    $s2, $a2                # $s2 = marker
+        move    $s3, $a3                # $s3 = canvas
+        blt     $s0, $0, ff_return      # row < 0
+        blt     $s1, $0, ff_return      # col < 0
+        lw      $t0, 0($s3)             # $t0 = canvas->height
+        bge     $s0, $t0, ff_return     # row >= canvas->height
+        lw      $t0, 4($s3)             # $t0 = canvas->width
+        bge     $s1, $t0, ff_return     # col >= canvas->width
+
+        lw      $t0, 12($s3)            # canvas->canvas
+        mul     $t1, $s0, 4
+        add     $t0, $t1, $t0           # $t0 = &canvas->canvas[row]
+        lw      $t0, 0($t0)             # canvas->canvas[row]
+        add     $t1, $s1, $t0           # $t1 = &canvas->canvas[row][col]
+        lbu     $t0, 0($t1)             # $t0 = curr = canvas->canvas[row][col]
+        lbu     $t2, 8($s3)             # $t2 = canvas->pattern
+        beq     $t0, $t2, ff_return     # curr == canvas->pattern
+        beq     $t0, $s2, ff_return     # curr == marker
+
+        sb      $s2, 0($t1)             # canvas->canvas[row][col] = marker
+        sub     $a0, $s0, 1             # $a0 = row - 1
+        jal     flood_fill              # flood_fill(row - 1, col, marker, canvas);
+        move    $a0, $s0
+        add     $a1, $s1, 1
+        move    $a2, $s2
+        move    $a3, $s3
+        jal     flood_fill              # flood_fill(row, col + 1, marker, canvas);
+        add     $a0, $s0, 1
+        move    $a1, $s1
+        move    $a2, $s2
+        move    $a3, $s3
+        jal     flood_fill              # flood_fill(row + 1, col, marker, canvas);
+        move    $a0, $s0
+        sub     $a1, $s1, 1
+        move    $a2, $s2
+        move    $a3, $s3
+        jal     flood_fill              # flood_fill(row, col - 1, marker, canvas);
+
+ff_return:
+        lw      $ra, 0($sp)
+        lw      $s0, 4($sp)
+        lw      $s1, 8($sp)
+        lw      $s2, 12($sp)
+        lw      $s3, 16($sp)
+        add     $sp, $sp, 20
+        jr      $ra
+
+#-----------------------interrupt handler part -------------------------------
+.kdata                          # interrupt handler data (separated just for readability)
+chunkIH:        .space 8        # space for two registers
+non_intrpt_str: .asciiz "Non-interrupt exception\n"
+unhandled_str:  .asciiz "Unhandled interrupt type\n"
+
+.ktext 0x80000180
+interrupt_handler:
+.set noat
+        move $k1, $at                   # set so we can't modify $at
+.set at
+	# save s registers, restore before returning to main loops
+        la $k0, chunkIH
+        sw $s0, 0($k0)
+        sw $s1, 4($k0)
+	sw $s2, 8($k0)
+	sw $s3, 12($k0)
+	sw $s4, 16($k0)
+
+        mfc0 $k0, $13                   # get cause register
+        srl $s0, $k0, 2
+        and $s0, $s0, 0xf
+        bne $s0, 0, non_intrpt
+
+interrupt_dispatch:
+        mfc0 $k0, $13
+        beq $k0, $0, done
+
+        and $s0, $k0, 0x1000            # check for bonk interrupt
+        bne $s0, 0, bonk_interrupt
+
+        and $s0, $k0, 0x8000            # check for timer interrupt
+        bne $s0, 0, timer_interrupt
+
+        and $s0, $k0, STATION_ENTER_INT_MASK
+        bne $s0, 0, station_ENTER_interrupt
+
+        and $s0, $k0, STATION_EXIT_INT_MASK
+        bne $s0, 0, station_EXIT_interrupt
+
+	and $s0, $k0, REQUEST_PUZZLE_INT_MASK
+        bne $s0, 0, puzzle_interrupt
+
+        and $s0, $k0, BOT_FREEZE_INT_MASK
+        bne $s0, 0, bot_freeze_interrupt
+
+        #j       main
+puzzle_interrupt:
+	# throws this interrupt when the puzzle has been generated and we can start working on it
+	sw $s1, REQUEST_PUZZLE_ACK	# acknowledge
+	or $t9, $t9, has_puzzle	# bit flag tells us that the puzzle is ready
+        #li      has_puzzle, 1           # if puzzle's ready, has_puzzle = 1
+	j interrupt_dispatch
+
+bonk_interrupt:
+        sw $s1, BONK_ACK                # acknowledge
+	li $t0, 180
+	sw $t0, ANGLE
+	li $t0, 0
+	sw $t0, ANGLE_CONTROL
+        #sw $t0, VELOCITY                 # stop moving
+
+        j interrupt_dispatch
+
+timer_interrupt:
+        sw $s1, TIMER_ACK               # acknowledge
+        # @TODO see if I can set up a timer interrupt for when the enemy locks their gate
+
+        j interrupt_dispatch
+
+station_EXIT_interrupt:
+        sw $s1, STATION_EXIT_ACK
+        and $t9, $t9, 0xfffffffb
+        j interrupt_dispatch
+station_ENTER_interrupt:
+        sw $s1, STATION_ENTER_ACK
+        or $t9, $t9, Station_Enter_flag
+        j interrupt_dispatch
+bot_freeze_interrupt:
+        la      $a1, thrown_puzzle
+        sw      $a1, BOT_FREEZE_ACK
+        #or      $t9, $t9, bot_frozen_flag
+        li      $t9, 1
+        sw      $t9, FLAG
+        # add     $a0, $a1, 16
+        # la      $a2, solution
+        # jal     count_disjoint_regions
+        # la      $a2, counts
+        # sw      $a2, UNFREEZE_BOT
+
+        #@TODO add actions here
+        j   interrupt_dispatch
+
+non_intrpt:
+        #li $v0, 4
+        #la $s0, non_intrpt_str
+        #syscall
+        j done
+
+done:
+	# restore saved registers after handling exceptions
+	# try to use as few saved registers as possible, try to
+	# minimize loads necessary for s register restoration
+        la $k0, chunkIH
+        lw $s0, 0($k0)
+        lw $s1, 4($k0)
+	lw $s2, 8($k0)
+	lw $s3, 12($k0)
+	lw $s4, 16($k0)
+
+.set noat
+        move $at, $k1
+.set at
+        eret

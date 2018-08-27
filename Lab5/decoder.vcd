@@ -1,0 +1,103 @@
+$date
+	Thu Feb 15 15:33:02 2018
+$end
+$version
+	Icarus Verilog
+$end
+$timescale
+	1s
+$end
+$scope module decoder_test $end
+$var wire 1 ! writeenable $end
+$var wire 1 " rd_src $end
+$var wire 1 # except $end
+$var wire 1 $ alu_src2 $end
+$var wire 3 % alu_op [2:0] $end
+$var reg 6 & funct [5:0] $end
+$var reg 6 ' opcode [5:0] $end
+$scope module decoder $end
+$var wire 1 $ alu_src2 $end
+$var wire 6 ( funct [5:0] $end
+$var wire 6 ) opcode [5:0] $end
+$var wire 1 " rd_src $end
+$var wire 1 ! writeenable $end
+$var wire 1 * temp $end
+$var wire 1 # except $end
+$var wire 3 + alu_op [2:0] $end
+$upscope $end
+$upscope $end
+$enddefinitions $end
+#0
+$dumpvars
+b10 +
+1*
+b0 )
+b100000 (
+b0 '
+b100000 &
+b10 %
+0$
+0#
+0"
+1!
+$end
+#10
+b11 %
+b11 +
+b100010 &
+b100010 (
+#20
+b100 %
+b100 +
+b100100 &
+b100100 (
+#30
+b101 %
+b101 +
+b100101 &
+b100101 (
+#40
+b110 %
+b110 +
+b100111 &
+b100111 (
+#50
+b111 %
+b111 +
+b100110 &
+b100110 (
+#60
+b10 %
+b10 +
+1$
+1"
+b101010 &
+b101010 (
+0*
+b1000 '
+b1000 )
+#70
+b100 %
+b100 +
+b1100 '
+b1100 )
+#80
+b101 %
+b101 +
+b1101 '
+b1101 )
+#90
+b111 %
+b111 +
+b1110 '
+b1110 )
+#100
+0!
+1#
+b0 %
+b0 +
+b10110 &
+b10110 (
+b110101 '
+b110101 )
+#110

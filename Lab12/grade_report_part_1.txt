@@ -1,0 +1,9 @@
+Grades for version committed on time
+	simple_cache: 10.0 / 20
+			*Passed test: basic
+			*Passed test: associativity
+			*Failed test: lru
+		
+Total: 10.0 / 20
+
+Final Score: 10.0 / 20

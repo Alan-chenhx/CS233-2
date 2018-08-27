@@ -1,0 +1,65 @@
+Grades for version committed on time
+	get origin: 20.0 / 20
+			*Passed test: default
+			*Passed test: default (evil)
+			*Passed test: given
+			*Passed test: given (evil)
+			*Passed test: double
+			*Passed test: double (evil)
+			*Passed test: cascade
+			*Passed test: cascade (evil)
+		
+	is connected: 20.0 / 20
+			*Passed test: same
+			*Passed test: same (evil)
+			*Passed test: one apart
+			*Passed test: one apart (evil)
+			*Passed test: off_by_one
+			*Passed test: off_by_one (evil)
+			*Passed test: harder
+			*Passed test: harder (evil)
+			*Passed test: cascade
+			*Passed test: cascade (evil)
+		
+	add line: 21.25 / 40
+			*Passed test: given_1
+			*Failed test: given_1 (evil)
+				*Error running test: 
+					Exception occurred at PC=0x004007a4
+					  Unaligned address in inst/data fetch: 0xdeadc0e2
+			*Passed test: given_2
+			*Failed test: given_2 (evil)
+				*Error running test: 
+					Exception occurred at PC=0x004007a4
+					  Unaligned address in inst/data fetch: 0xdeadc16a
+			*Passed test: base
+			*Partially passed test: base (evil) (callee-saved registers were modified)
+			*Passed test: vertical
+			*Failed test: vertical (evil)
+				*Error running test: 
+					Exception occurred at PC=0x004007a4
+					  Unaligned address in inst/data fetch: 0xdeadc362
+			*Passed test: reverse
+			*Failed test: reverse (evil)
+				*Error running test: 
+					Exception occurred at PC=0x004007a4
+					  Unaligned address in inst/data fetch: 0xdeadc16a
+			*Passed test: combined
+			*Failed test: combined (evil)
+				*Error running test: 
+					Exception occurred at PC=0x004007a4
+					  Unaligned address in inst/data fetch: 0xdeadc162
+			*Passed test: full
+			*Failed test: full (evil)
+				*Error running test: 
+					Exception occurred at PC=0x004007a4
+					  Unaligned address in inst/data fetch: 0xdeadc0e2
+			*Passed test: cascade
+			*Failed test: cascade (evil)
+				*Error running test: 
+					Exception occurred at PC=0x004007a4
+					  Unaligned address in inst/data fetch: 0xdeadc5da
+		
+Total: 61.25 / 80
+
+Final Score: 61.25 / 80

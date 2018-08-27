@@ -1,0 +1,85 @@
+// full_machine: execute a series of MIPS instructions from an instruction cache
+//
+// except (output) - set to 1 when an unrecognized instruction is to be executed.
+// clock   (input) - the clock signal
+// reset   (input) - set to 1 to set all registers to zero, set to 0 for normal execution.
+
+module full_machine(except, clock, reset);
+    output      except;
+    input       clock, reset;
+
+    wire [31:0] inst;  
+    wire [31:0] PC,nextPC;  
+    wire [31:0] B,imm32,B_out;
+    wire [2:0] alu_op;
+    wire [15:0] bus;
+    wire [4:0] rdNum;
+    wire writeenable,rd_src,alu_src2;
+    wire [5:0]opcode;
+    wire [5:0]funct;
+    wire [31:0] rsData,out,rdData,rtData;
+    wire zero,negative,overflow;
+
+    wire [31:0]data_out,addr,data_in;
+    wire [31:0]mem_read_out;//used for load word;
+
+    wire [7:0]byte_out;
+    wire [31:0] lb_out,lb_final;//used for load byte;
+
+    wire [31:0]slt_out;//slt
+
+    wire [31:0]lui_in;//lui
+
+    wire [31:0]j_out,next_op,jr_out,branch_out,branch_offset;
+
+    wire [31:0] temp;
+    wire  mem_read, word_we, byte_we, byte_load, slt, lui, addm;
+    wire [1:0] control_type;
+
+    wire [31:0]mem_read_in;
+    assign opcode = inst[31:26];
+    assign funct = inst[5:0];
+    alu32 al(next_op,,,,PC,32'h4,`ALU_ADD);
+
+    register #(32) PC_reg(PC, nextPC, clock, 1'b1, reset);
+
+    instruction_memory im(inst, PC[31:2]);
+    
+    regfile rf (rsData,rtData,inst[25:21], inst[20:16], rdNum, rdData,writeenable, clock, reset);
+    alu32 al1(rdData,zero, negative, overflow, rsData, B_out, alu_op);
+    mips_decode dc(alu_op, rd_src, alu_src2, writeenable, except, control_type,
+                   mem_read, word_we, byte_we, byte_load, slt, lui, addm,
+                   opcode, funct, zero);
+    assign bus = {16{inst[15]}};
+    assign imm32= {bus,inst[15:0]};//sign extension
+    mux2v mx2(B,rtData,imm32,alu_src2);
+
+
+    /* add other modules */
+    mux2v mx3(mem_read_out,slt_out,mem_read_in,mem_read);
+    mux2v #(5) mx1(rdNum,inst[15:11],inst[20:16],rd_src);//load word
+
+    mux4v #(8) mx4(byte_out, data_out[7:0],data_out[15:8],data_out[23:16],data_out[31:24],rdData[1:0]);
+    assign lb_out = {{24{1'b0}},byte_out};
+    mux2v mx5(lb_final,data_out,lb_out,byte_load);//load byte
+
+    assign temp = {{31{1'b0}},negative};
+    mux2v mx6(slt_out,rdData,temp,slt);//slt
+
+    assign lui_in = {{16{1'b0}},inst[15:0]};
+    mux2v mx7(rdData,mem_read_out,lui_in,lui);//lui
+
+    mux4v mx8(nextPC,next_op,branch_out,j_out,jr_out,control_type);//control_type
+
+    alu32 branches(branch_out,,,,next_op,branch_offset,`ALU_ADD);
+    assign branch_offset = {imm32[29:0],{2{1'b0}}};//branch
+    assign jr_out = rsData;//jump register
+    assign j_out = {PC[31:28],inst[25:0],{2{1'b0}}};//jump
+
+    data_mem data_mem(data_out, rdData, rtData, word_we, byte_we, clock, reset);
+
+    alu32 am(addm_out,,,,data_out,rtData,`ALU_ADD);//addm
+    mux2v mx9(mem_read_in,lb_final,addm_out,addm);
+    mux2v mx10(B_out,B,zeros,addm);
+
+endmodule // full_machine
